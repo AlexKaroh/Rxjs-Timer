@@ -38,7 +38,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.isTimerWork) {
       this.timerSubscription = timer(INIT_VALUE , SECOND_DURATION).pipe(
         map(val => this.lastTime + val)
-      ).subscribe(this.seconds$)
+      ).subscribe(this.seconds$);
     } else {
       this.lastTime = INIT_VALUE;
       this.seconds$.next(INIT_VALUE);
@@ -49,7 +49,7 @@ export class AppComponent implements OnInit, OnDestroy {
   waitTimer() {
     if (this.isTimerWork) {
       this.timerSubscription?.unsubscribe();
-      this.lastTime = this.seconds$.value
+      this.lastTime = this.seconds$.value;
       this.isTimerWork = !this.isTimerWork;
       this.cds.detectChanges();
     }
