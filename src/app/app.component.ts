@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation, ViewChild, Eleme
 import { Subscription, timer, BehaviorSubject, map, fromEvent, debounceTime, scan, auditTime, filter, buffer } from 'rxjs';
 
 const INIT_VALUE = 0;
+const TWO_CLICKS = 2;
+const CLICK_DURATION = 300;
+const SECOND_DURATION = 1000;
 
 @Component({
   selector: 'app-root',
@@ -24,16 +27,16 @@ export class AppComponent implements OnInit, OnDestroy {
     const clicks$ = fromEvent(this.button?.nativeElement, 'click');
     this.clicksSubscription = clicks$.pipe(
       buffer(clicks$.pipe(
-        debounceTime(300)
+        debounceTime(CLICK_DURATION)
       )),
-      filter(clicks => clicks.length === 2),
+      filter(clicks => clicks.length === TWO_CLICKS),
     ).subscribe(() => this.waitTimer());
   }
 
   activateTimer() {
     this.isTimerWork = !this.isTimerWork;
     if (this.isTimerWork) {
-      this.timerSubscription = timer(1, 1000).pipe(
+      this.timerSubscription = timer(INIT_VALUE , SECOND_DURATION).pipe(
         map(val => this.lastTime + val)
       ).subscribe(this.seconds$)
     } else {
