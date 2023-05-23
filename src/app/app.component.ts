@@ -48,17 +48,20 @@ export class AppComponent implements OnInit, OnDestroy {
 
   waitTimer() {
     if (this.isTimerWork) {
+      this.isTimerWork = !this.isTimerWork;
       this.timerSubscription?.unsubscribe();
       this.lastTime = this.seconds$.value;
-      this.isTimerWork = !this.isTimerWork;
       this.cds.detectChanges();
     }
   }
 
   resetTimer() {
+    this.isTimerWork = true;
     this.lastTime = INIT_VALUE;
     this.timerSubscription?.unsubscribe();
-    this.activateTimer();
+    this.timerSubscription = timer(INIT_VALUE , SECOND_DURATION).pipe(
+      map(val => this.lastTime + val)
+    ).subscribe(this.seconds$);
   }
 
   ngOnDestroy() {
