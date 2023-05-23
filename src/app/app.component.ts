@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, ViewChild, ElementRef, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
-import { Subscription, timer, BehaviorSubject, map, fromEvent, debounceTime, scan, auditTime, filter, buffer } from 'rxjs';
+import { Subscription, timer, BehaviorSubject, map, fromEvent, debounceTime, filter, buffer } from 'rxjs';
 
 const INIT_VALUE = 0;
 const TWO_CLICKS = 2;
