@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, ViewChild, ElementRef, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
-import { Subscription, timer, BehaviorSubject, map, fromEvent, debounceTime, filter, buffer } from 'rxjs';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { Subscription, timer, BehaviorSubject, map, fromEvent, debounceTime, filter, buffer, interval, switchMap } from 'rxjs';
 
 const INIT_VALUE = 0;
 const TWO_CLICKS = 2;
 const CLICK_DURATION = 300;
-const SECOND_DURATION = 1000;
+
+type Status = 'started'|'stoped'|'waiting'|'reset';
 
 @Component({
   selector: 'app-root',
@@ -13,60 +14,36 @@ const SECOND_DURATION = 1000;
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit {
   @ViewChild('button', {static: true}) button?: ElementRef;
-  seconds$ = new BehaviorSubject<number>(INIT_VALUE);
-  isTimerWork = false;
+  status$ = new BehaviorSubject<Status>('stoped');
   private lastTime = INIT_VALUE;
-  private clicksSubscription?: Subscription;
   private timerSubscription?: Subscription;
 
-  constructor( private cds: ChangeDetectorRef ) {}
+  constructor() {}
 
   ngOnInit() {
     const clicks$ = fromEvent(this.button?.nativeElement, 'click');
-    this.clicksSubscription = clicks$.pipe(
+    clicks$.pipe(
       buffer(clicks$.pipe(
         debounceTime(CLICK_DURATION)
       )),
       filter(clicks => clicks.length === TWO_CLICKS),
-    ).subscribe(() => this.waitTimer());
+    ).subscribe(() => this.seconds$.next('waiting'));
   }
 
   activateTimer() {
-    this.isTimerWork = !this.isTimerWork;
-    if (this.isTimerWork) {
-      this.timerSubscription = timer(INIT_VALUE , SECOND_DURATION).pipe(
-        map(val => this.lastTime + val)
-      ).subscribe(this.seconds$);
-    } else {
-      this.lastTime = INIT_VALUE;
-      this.seconds$.next(INIT_VALUE);
-      this.timerSubscription?.unsubscribe();
-    }
-  }
-
-  waitTimer() {
-    if (this.isTimerWork) {
-      this.isTimerWork = !this.isTimerWork;
-      this.timerSubscription?.unsubscribe();
-      this.lastTime = this.seconds$.value;
-      this.cds.detectChanges();
-    }
-  }
-
-  resetTimer() {
-    this.isTimerWork = true;
-    this.lastTime = INIT_VALUE;
-    this.timerSubscription?.unsubscribe();
-    this.timerSubscription = timer(INIT_VALUE , SECOND_DURATION).pipe(
-      map(val => this.lastTime + val)
-    ).subscribe(this.seconds$);
-  }
-
-  ngOnDestroy() {
-    this.timerSubscription?.unsubscribe();
-    this.clicksSubscription?.unsubscribe();
+    this.timerSubscription = this.status$.pipe(
+      switchMap((el) => {
+        switch(el) {
+          case 'started':
+            interval(1000).pipe(
+              map(() => ++this.lastTime)
+            )
+          
+        }
+      })
+    ).subscribe()
   }
 
 }

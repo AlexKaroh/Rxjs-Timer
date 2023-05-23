@@ -2,12 +2,12 @@
   <div class="timer">{{seconds$ | async | formatTime}}</div>
   <div class="buttons">
     <button class="button" (click)="activateTimer()">
-      <span class="button_font">{{isTimerWork ? 'STOP' : 'START'}}</span>
+      <span class="button_font">START</span>
     </button>
     <button class="button" #button>
       <span class="button_font">WAIT</span>
     </button>
-    <button class="button" (click)="resetTimer()">
+    <button class="button">
       <span class="button_font">RESET</span>
     </button>
   </div>
