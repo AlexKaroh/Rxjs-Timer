@@ -1,10 +1,10 @@
 <div class="main">
-  <div class="timer">{{timer$ | async  | formatTime}}</div>
+  <div class="timer">{{timer$ | async | formatTime}}</div>
   <div class="buttons">
-    <button class="button" *ngIf="status$.value === 'stoped' || status$.value === 'waiting'" (click)="startTimer()">
+    <button class="button" *ngIf="status$.value === 'stoped' || status$.value === 'waiting'" (click)="status$.next('started')">
       <span class="button_font">START</span>
     </button>
-    <button class="button" *ngIf="status$.value === 'started'" (click)="status$.next('stoped')">
+    <button class="button" *ngIf="status$.value === 'started' || status$.value === 'reset'" (click)="status$.next('stoped')">
       <span class="button_font">STOP</span>
     </button>
     <button class="button" #button>

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, ViewChild, ElementRef, OnInit } from '@angular/core';
-import { BehaviorSubject, map, fromEvent, debounceTime, filter, buffer, switchMap, Observable, of, startWith, interval } from 'rxjs';
+import { BehaviorSubject, map, fromEvent, debounceTime, filter, buffer, switchMap, Observable, of, startWith, interval, Subscription, timer } from 'rxjs';
 
 const INIT_VALUE = 0;
 const TWO_CLICKS = 2;
@@ -15,12 +15,30 @@ type Status = 'started'|'stoped'|'waiting'|'reset';
   encapsulation: ViewEncapsulation.None
 })
 export class AppComponent implements OnInit {
+  timerSubscription?: Subscription;
   @ViewChild('button', {static: true}) button?: ElementRef;
-  status$ = new BehaviorSubject<Status>('stoped');
-  timer$?: Observable<number>;
   lastTime = INIT_VALUE;
-
-  constructor() {}
+  status$ = new BehaviorSubject<Status>('stoped');
+  timer$: Observable<number> = this.status$.pipe(
+    switchMap((status) => {
+      const timer = interval(SECOND_DURATION).pipe(
+        startWith(this.lastTime),
+        map(() => this.lastTime++),
+      );
+      switch (status) {
+        case 'started':
+          return timer;
+        case 'stoped':
+          this.lastTime = INIT_VALUE;
+          return of(0);
+        case 'waiting':
+          return of(--this.lastTime);
+        case 'reset':
+          this.lastTime = INIT_VALUE;
+          return timer;
+      }
+    })
+  );
 
   ngOnInit() {
     const clicks$ = fromEvent(this.button?.nativeElement, 'click');
@@ -30,46 +48,5 @@ export class AppComponent implements OnInit {
       )),
       filter(clicks => clicks.length === TWO_CLICKS),
     ).subscribe(() => this.status$.next('waiting'));
-
-    this.status$.pipe(
-      switchMap((status) => {
-        switch(status) {
-          case 'started':
-            this.timer$ = interval(SECOND_DURATION).pipe(
-              map(() => ++this.lastTime),
-              startWith(this.lastTime),
-            );
-            break;
-          case 'stoped':
-            this.lastTime = INIT_VALUE;
-            this.timer$ = of(INIT_VALUE);
-            break;
-          case 'waiting':
-            this.timer$ = of(this.lastTime);
-            break;
-          case 'reset': 
-            this.status$.next('stoped');
-            this.status$.next('started');
-            break;
-        }
-        return of(INIT_VALUE);
-      })
-    ).subscribe();
-  }
-
-  startTimer() {
-    this.status$.next('started');
-  }
-
-  stopTimer() {
-    this.status$.next('stoped');
-  }
-
-  waitTimer() {
-    this.status$.next('waiting');
-  }
-
-  resetTimer() {
-    this.status$.next('reset')
   }
 }
