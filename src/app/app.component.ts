@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, ViewChild, ElementRef, OnInit } from '@angular/core';
-import { Subscription, timer, BehaviorSubject, map, fromEvent, debounceTime, filter, buffer, interval, switchMap } from 'rxjs';
+import { timer, BehaviorSubject, map, fromEvent, debounceTime, filter, buffer, tap, switchMap, Observable, of, startWith, interval } from 'rxjs';
 
 const INIT_VALUE = 0;
 const TWO_CLICKS = 2;
 const CLICK_DURATION = 300;
-
+const SECOND_DURATION = 1000;
 type Status = 'started'|'stoped'|'waiting'|'reset';
 
 @Component({
@@ -17,8 +17,8 @@ type Status = 'started'|'stoped'|'waiting'|'reset';
 export class AppComponent implements OnInit {
   @ViewChild('button', {static: true}) button?: ElementRef;
   status$ = new BehaviorSubject<Status>('stoped');
-  private lastTime = INIT_VALUE;
-  private timerSubscription?: Subscription;
+  timer$?: Observable<number>;
+  lastTime = INIT_VALUE;
 
   constructor() {}
 
@@ -29,21 +29,48 @@ export class AppComponent implements OnInit {
         debounceTime(CLICK_DURATION)
       )),
       filter(clicks => clicks.length === TWO_CLICKS),
-    ).subscribe(() => this.seconds$.next('waiting'));
-  }
+    ).subscribe(() => this.status$.next('waiting'));
 
-  activateTimer() {
-    this.timerSubscription = this.status$.pipe(
-      switchMap((el) => {
-        switch(el) {
+    this.status$.pipe(
+      switchMap((status) => {
+        switch(status) {
           case 'started':
-            interval(1000).pipe(
-              map(() => ++this.lastTime)
-            )
-          
+            this.timer$ = interval(SECOND_DURATION).pipe(
+              map(() => ++this.lastTime),
+              startWith(this.lastTime),
+            );
+            break;
+          case 'stoped':
+            this.lastTime = INIT_VALUE;
+            this.timer$ = of(INIT_VALUE);
+            break;
+          case 'waiting':
+            this.timer$ = of(this.lastTime);
+            break;
+          case 'reset': 
+            this.lastTime = INIT_VALUE;
+            this.timer$ = of(0);
+            this.status$.next('started');
+            break;
         }
+        return of(0);
       })
-    ).subscribe()
+    ).subscribe();
   }
 
+  startTimer() {
+    this.status$.next('started');
+  }
+
+  stopTimer() {
+    this.status$.next('stoped');
+  }
+
+  waitTimer() {
+    this.status$.next('waiting');
+  }
+
+  resetTimer() {
+    this.status$.next('reset')
+  }
 }

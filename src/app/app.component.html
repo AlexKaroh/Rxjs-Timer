@@ -1,13 +1,16 @@
 <div class="main">
-  <div class="timer">{{seconds$ | async | formatTime}}</div>
+  <div class="timer">{{timer$ | async  | formatTime}}</div>
   <div class="buttons">
-    <button class="button" (click)="activateTimer()">
+    <button class="button" *ngIf="status$.value === 'stoped' || status$.value === 'waiting'" (click)="startTimer()">
       <span class="button_font">START</span>
+    </button>
+    <button class="button" *ngIf="status$.value === 'started'" (click)="status$.next('stoped')">
+      <span class="button_font">STOP</span>
     </button>
     <button class="button" #button>
       <span class="button_font">WAIT</span>
     </button>
-    <button class="button">
+    <button class="button" (click)="status$.next('reset')">
       <span class="button_font">RESET</span>
     </button>
   </div>
