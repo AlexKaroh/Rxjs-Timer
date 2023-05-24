@@ -15,32 +15,33 @@ type Status = 'started'|'stoped'|'waiting'|'reset';
   encapsulation: ViewEncapsulation.None
 })
 export class AppComponent implements OnInit {
-  timerSubscription?: Subscription;
   @ViewChild('button', {static: true}) button?: ElementRef;
   lastTime = INIT_VALUE;
   status$ = new BehaviorSubject<Status>('stoped');
-  timer$: Observable<number> = this.status$.pipe(
-    switchMap((status) => {
-      const timer = interval(SECOND_DURATION).pipe(
-        startWith(this.lastTime),
-        map(() => this.lastTime++),
-      );
-      switch (status) {
-        case 'started':
-          return timer;
-        case 'stoped':
-          this.lastTime = INIT_VALUE;
-          return of(0);
-        case 'waiting':
-          return of(--this.lastTime);
-        case 'reset':
-          this.lastTime = INIT_VALUE;
-          return timer;
-      }
-    })
-  );
+  timer$?: Observable<number>;
 
   ngOnInit() {
+    this.timer$ = this.status$.pipe(
+      switchMap((status) => {
+        const timer = interval(SECOND_DURATION).pipe(
+          startWith(this.lastTime),
+          map(() => this.lastTime++),
+        );
+        switch (status) {
+          case 'started':
+            return timer;
+          case 'stoped':
+            this.lastTime = INIT_VALUE;
+            return of(0);
+          case 'waiting':
+            return of(--this.lastTime);
+          case 'reset':
+            this.lastTime = INIT_VALUE;
+            return timer;
+        }
+      })
+    );
+
     const clicks$ = fromEvent(this.button?.nativeElement, 'click');
     clicks$.pipe(
       buffer(clicks$.pipe(
