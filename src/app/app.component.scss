@@ -29,12 +29,13 @@
   background-color: #fff0;
   border: 1px solid #ffffff50;
   border-radius: 5px;
+
+  &:hover {
+    transform: scale(1.05);
+    transition: .3s;
+  }
 }
 
-.button:hover {
-  transform: scale(1.05);
-  transition: .3s;
-}
 
 .button_font {
   font-family: Helvetica, sans-serif;

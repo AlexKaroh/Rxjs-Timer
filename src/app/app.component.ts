@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, ViewChild, ElementRef, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
-import { Subscription, timer, BehaviorSubject, map, fromEvent, debounceTime, filter, buffer } from 'rxjs';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { BehaviorSubject, map, fromEvent, debounceTime, filter, buffer, switchMap, Observable, of, startWith, interval } from 'rxjs';
 
 const INIT_VALUE = 0;
 const TWO_CLICKS = 2;
 const CLICK_DURATION = 300;
 const SECOND_DURATION = 1000;
+type Status = 'started'|'stoped'|'waiting'|'reset';
 
 @Component({
   selector: 'app-root',
@@ -13,60 +14,45 @@ const SECOND_DURATION = 1000;
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit {
   @ViewChild('button', {static: true}) button?: ElementRef;
-  seconds$ = new BehaviorSubject<number>(INIT_VALUE);
-  isTimerWork = false;
-  private lastTime = INIT_VALUE;
-  private clicksSubscription?: Subscription;
-  private timerSubscription?: Subscription;
+  lastTime = INIT_VALUE;
+  status$ = new BehaviorSubject<Status>('stoped');
+  timer$?: Observable<number>;
 
-  constructor( private cds: ChangeDetectorRef ) {}
 
   ngOnInit() {
+    const timer = interval(SECOND_DURATION).pipe(
+      map(() => ++this.lastTime)
+    );
+
+    this.timer$ = this.status$.pipe(
+      switchMap((status) => {
+        switch (status) {
+          case 'started':
+            return timer.pipe(
+              startWith(this.lastTime)
+            );
+          case 'stoped':
+            this.lastTime = INIT_VALUE;
+            return of(INIT_VALUE);
+          case 'waiting':
+            return of(this.lastTime);
+          case 'reset':
+            this.lastTime = INIT_VALUE;
+            return timer.pipe(
+              startWith(this.lastTime)
+            );
+        }
+      })
+    );
+
     const clicks$ = fromEvent(this.button?.nativeElement, 'click');
-    this.clicksSubscription = clicks$.pipe(
+    clicks$.pipe(
       buffer(clicks$.pipe(
         debounceTime(CLICK_DURATION)
       )),
       filter(clicks => clicks.length === TWO_CLICKS),
-    ).subscribe(() => this.waitTimer());
+    ).subscribe(() => this.status$.next('waiting'));
   }
-
-  activateTimer() {
-    this.isTimerWork = !this.isTimerWork;
-    if (this.isTimerWork) {
-      this.timerSubscription = timer(INIT_VALUE , SECOND_DURATION).pipe(
-        map(val => this.lastTime + val)
-      ).subscribe(this.seconds$);
-    } else {
-      this.lastTime = INIT_VALUE;
-      this.seconds$.next(INIT_VALUE);
-      this.timerSubscription?.unsubscribe();
-    }
-  }
-
-  waitTimer() {
-    if (this.isTimerWork) {
-      this.isTimerWork = !this.isTimerWork;
-      this.timerSubscription?.unsubscribe();
-      this.lastTime = this.seconds$.value;
-      this.cds.detectChanges();
-    }
-  }
-
-  resetTimer() {
-    this.isTimerWork = true;
-    this.lastTime = INIT_VALUE;
-    this.timerSubscription?.unsubscribe();
-    this.timerSubscription = timer(INIT_VALUE , SECOND_DURATION).pipe(
-      map(val => this.lastTime + val)
-    ).subscribe(this.seconds$);
-  }
-
-  ngOnDestroy() {
-    this.timerSubscription?.unsubscribe();
-    this.clicksSubscription?.unsubscribe();
-  }
-
 }
