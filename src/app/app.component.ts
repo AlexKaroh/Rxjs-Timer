@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, ViewChild, ElementRef, OnInit } from '@angular/core';
-import { timer, BehaviorSubject, map, fromEvent, debounceTime, filter, buffer, tap, switchMap, Observable, of, startWith, interval } from 'rxjs';
+import { BehaviorSubject, map, fromEvent, debounceTime, filter, buffer, switchMap, Observable, of, startWith, interval } from 'rxjs';
 
 const INIT_VALUE = 0;
 const TWO_CLICKS = 2;
@@ -48,12 +48,11 @@ export class AppComponent implements OnInit {
             this.timer$ = of(this.lastTime);
             break;
           case 'reset': 
-            this.lastTime = INIT_VALUE;
-            this.timer$ = of(0);
+            this.status$.next('stoped');
             this.status$.next('started');
             break;
         }
-        return of(0);
+        return of(INIT_VALUE);
       })
     ).subscribe();
   }
