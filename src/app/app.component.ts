@@ -20,24 +20,29 @@ export class AppComponent implements OnInit {
   status$ = new BehaviorSubject<Status>('stoped');
   timer$?: Observable<number>;
 
+
   ngOnInit() {
+    const timer = interval(SECOND_DURATION).pipe(
+      map(() => ++this.lastTime)
+    );
+
     this.timer$ = this.status$.pipe(
       switchMap((status) => {
-        const timer = interval(SECOND_DURATION).pipe(
-          startWith(this.lastTime),
-          map(() => this.lastTime++),
-        );
         switch (status) {
           case 'started':
-            return timer;
+            return timer.pipe(
+              startWith(this.lastTime)
+            );
           case 'stoped':
             this.lastTime = INIT_VALUE;
-            return of(0);
+            return of(INIT_VALUE);
           case 'waiting':
-            return of(--this.lastTime);
+            return of(this.lastTime);
           case 'reset':
             this.lastTime = INIT_VALUE;
-            return timer;
+            return timer.pipe(
+              startWith(this.lastTime)
+            );
         }
       })
     );
